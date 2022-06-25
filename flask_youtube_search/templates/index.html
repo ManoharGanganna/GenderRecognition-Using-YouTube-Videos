@@ -60,6 +60,13 @@
                 <div class="btn-group">
                   <a type="button" href="{{ video.url }}" class="btn btn-sm btn-outline-secondary">View</a>
                 </div>
+                <div class="btn-group">
+                      <p>
+                      <form method="POST">
+                        <button type="submit" name="download" value="{{ video.url }}" class="btn btn-sm btn-outline-secondary">Download</button>
+                      </form>
+                      </p>
+                </div>
                 <small class="text-muted">{{ video.duration }} mins</small>
               </div>
             </div>
