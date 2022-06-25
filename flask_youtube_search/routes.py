@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, current_app, request
 import requests
 from isodate import parse_duration
+from .videodownload import video_downloader
+import re
 
 main = Blueprint('main', __name__)
 
 
-@main.route('/',methods = ['GET','POST'])
+@main.route('/', methods=['GET', 'POST'])
 def index():
     search_url = 'https://www.googleapis.com/youtube/v3/search'
     video_url = 'https://www.googleapis.com/youtube/v3/videos'
@@ -13,42 +15,54 @@ def index():
     videos = []
 
     if request.method == 'POST':
-        search_params = {
-            'key': current_app.config['YOUTUBE_API_KEY'],
-            'q': request.form.get('query'),
-            'part': 'snippet',
-            'maxResults': 9,
-            'type': 'video'
-        }
-
-        r = requests.get(search_url, params=search_params)
-
-        results = r.json()['items']
-
-        video_ids = []
-        for result in results:
-            video_ids.append(result['id']['videoId'])
-
-        video_params = {
-            'key': current_app.config['YOUTUBE_API_KEY'],
-            'id': ','.join(video_ids),
-            'part': 'snippet,contentDetails',
-            'maxResults': 9
-        }
-
-        r = requests.get(video_url, params=video_params)
-
-        results = r.json()['items']
-
-        for result in results:
-            video_data = {
-                'id': result['id'],
-                'url': f'https://www.youtube.com/watch?v={ result["id"]}',
-                'thumbnail': result['snippet']['thumbnails']['high']['url'],
-                'duration': parse_duration(result['contentDetails']['duration']).total_seconds()//60,
-                'title': result['snippet']['title'],
-
+        if request.form.get('query') != '':
+            search_params = {
+                'key': current_app.config['YOUTUBE_API_KEY'],
+                'q': request.form.get('query'),
+                'part': 'snippet',
+                'maxResults': 9,
+                'type': 'video'
             }
-            videos.append(video_data)
 
-    return render_template('index.html',videos = videos)
+            r = requests.get(search_url, params=search_params)
+
+            results = r.json()['items']
+
+            video_ids = []
+            for result in results:
+                video_ids.append(result['id']['videoId'])
+
+            video_params = {
+                'key': current_app.config['YOUTUBE_API_KEY'],
+                'id': ','.join(video_ids),
+                'part': 'snippet,contentDetails',
+                'maxResults': 9
+            }
+
+            r = requests.get(video_url, params=video_params)
+
+            results = r.json()['items']
+
+            for result in results:
+                video_data = {
+                    'id': result['id'],
+                    'url': f'https://www.youtube.com/watch?v={result["id"]}',
+                    'thumbnail': result['snippet']['thumbnails']['high']['url'],
+                    'duration': parse_duration(result['contentDetails']['duration']).total_seconds() // 60,
+                    'title': result['snippet']['title'],
+
+                }
+                videos.append(video_data)
+
+        if 'download' in request.form:
+            download_url = request.form.get('download')
+            file_name_url = re.search(r"[^v=]*$", download_url)
+            file_name = file_name_url.group()
+            video_downloader(download_url, file_name)
+            return render_template('index.html')
+
+        return render_template('index.html', videos=videos)
+
+    else:
+
+        return render_template('index.html')
