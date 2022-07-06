@@ -66,7 +66,7 @@ def index():
                     flash(message)
                     return render_template('index.html')
 
-            return render_template('index.html', videos=videos)
+        return render_template('index.html', videos=videos)
 
     else:
 
