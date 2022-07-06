@@ -44,6 +44,15 @@
         <button type="submit" name="submit" value="search" class="btn btn-primary my-2">YouTube Search</button>
       </p>
       </form>
+	  {% block content %}
+		{% with messages = get_flashed_messages() %}
+			{% if messages %}
+				{% for msg in messages%}
+					<p class="lead text-muted">{{msg}}</p>
+				{% endfor %}
+			{% endif %}
+		{% endwith %}
+	  {% endblock %}
     </div>
   </section>
 
@@ -61,11 +70,11 @@
                   <a type="button" href="{{ video.url }}" class="btn btn-sm btn-outline-secondary">View</a>
                 </div>
                 <div class="btn-group">
-                      <p>
+                    <p>
                       <form method="POST">
                         <button type="submit" name="download" value="{{ video.url }}" class="btn btn-sm btn-outline-secondary">Download</button>
                       </form>
-                      </p>
+                    </p>
                 </div>
                 <small class="text-muted">{{ video.duration }} mins</small>
               </div>

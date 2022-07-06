@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, current_app, request
+from flask import Blueprint, render_template, current_app, request, url_for, redirect, flash
 import requests
 from isodate import parse_duration
 from .videodownload import video_downloader
@@ -54,15 +54,27 @@ def index():
                 }
                 videos.append(video_data)
 
-        if 'download' in request.form:
-            download_url = request.form.get('download')
-            file_name_url = re.search(r"[^v=]*$", download_url)
-            file_name = file_name_url.group()
-            video_downloader(download_url, file_name)
-            return render_template('index.html')
+            if 'download' in request.form:
+                download_url = request.form.get('download')
+                file_name_url = re.search(r"[^v=]*$", download_url)
+                file_name = file_name_url.group()
+                download_status = video_downloader(download_url, file_name)
+                if download_status == 'Download_complete':
+                    return redirect(url_for('.success', file=file_name))
+                else:
+                    message = f"The Video Download was unsuccessful due to {download_status}"
+                    flash(message)
+                    return render_template('index.html')
 
-        return render_template('index.html', videos=videos)
+            return render_template('index.html', videos=videos)
 
     else:
 
         return render_template('index.html')
+
+
+@main.route('/success/<file>')
+def success(file):
+    audio_file = file + '.mp3'
+    print(audio_file)
+    return render_template('success.html', name=audio_file)
