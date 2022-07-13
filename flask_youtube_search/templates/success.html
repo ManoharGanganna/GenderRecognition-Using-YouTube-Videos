@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Result Page{% endblock %}
+
+{% block section %}
+    <main role="main">
+
+  <section class="jumbotron text-center">
+    <div class="container">
+      <h2 class="jumbotron-heading">The video has been downloaded successfully</h2>
+      <form method="POST">
+          <p>
+              <button type="submit" name="results" value="search" class="btn btn-success my-2">View Results</button>
+          </p>
+      </form>
+    </div>
+  </section>
+
+</main>
+{% endblock %}
