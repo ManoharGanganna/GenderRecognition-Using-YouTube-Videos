@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <title>HTML Video Player</title>
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load("current", {packages:["corechart"]});
+      google.charts.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+			{% for key, value in data.items() %}
+				{% if value is string %}
+					['{{ key }}', '{{ value }}'],
+				{% else %}
+					['{{ key }}', {{ value }}],
+				{% endif %}
+			{% endfor %}
+        ]);
+
+        var options = {
+          backgroundColor: 'transparent',
+          'title' : 'Gender Statistics',
+          is3D: true,
+          legend: {textStyle: {color: 'black'}},
+          titleTextStyle: {color: 'white'
+}
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart_3d'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+
+    <div class="video-player">
+      <video
+        src="{{ url_for('static', filename=video_id) }}"
+        poster = "{{ thumbnail }}"
+        class="video">
+      </video>
+      <div class="player-controls">
+
+          <div class="video-progress">
+			<div class="video-progress-filled"></div>
+		  </div>
+
+          <button class="play-button" title="Play">►</button>
+		  <input
+			type="range"
+			class="volume"
+			min="0"
+			max="1"
+			step="0.01"
+			value="1"
+		  />
+		  <div class="time">
+			<span class="current">0:00</span> / <span class="duration">0:00</span>
+		  </div>
+      </div>
+	</div>
+	<div style="margin: 10px 0 0 10px;width: 500px">
+		<div id="piechart_3d" style="width:450px; height: 450px;"></div>
+	</div>
+    <script src="{{ url_for('static', filename='video.js') }}" ></script>
+  </body>
+</html>
