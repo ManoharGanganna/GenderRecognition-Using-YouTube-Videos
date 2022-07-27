@@ -1,0 +1,4 @@
+mysql_host: 'localhost'
+mysql_user: 'root'
+mysql_password: 'Manoharg@94'
+mysql_db: 'youtube_data'
