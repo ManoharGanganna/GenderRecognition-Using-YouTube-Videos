@@ -1,13 +1,21 @@
 from flask import Blueprint, render_template, current_app, request, url_for, redirect, flash
 import requests
+import re
+import os
+import ast
+# import redis
+# from rq import Queue
 from isodate import parse_duration
 from .videodownload import video_downloader
 from .audio_prediction import audio_pred
-import re
-import os
+from extensions import mysql
+from .sendemail import send_email
+
 
 main = Blueprint('main', __name__)
 
+# r = redis.Redis()
+# q = Queue(connection=r)
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
@@ -76,6 +84,18 @@ def index():
         return render_template('index.html')
 
 
+def process_results(audio_location, to_mail, file_name):
+    result, result1 = audio_pred(audio_location)
+    res_dict = {'Voice': 'Duration'}
+    res_dict.update(result)
+    insert_cur_email = mysql.connection.cursor()
+    insert_cur_email.execute("INSERT INTO prediction_data(video_id,prediction_results)VALUES(%s,%s)",
+                             (file_name, res_dict))
+    mysql.connection.commit()
+    insert_cur_email.close()
+    send_email(to_mail)
+
+
 @main.route('/success', methods=['GET', 'POST'])
 def success():
     file = request.args.get("file")
@@ -85,13 +105,44 @@ def success():
     audio_file_path = os.path.join(static_file_path, 'audios')
     audio_file = file + '.mp3'
     video_file = file + '.mp4'
+    vd_file = 'videos/' + video_file
     audio_loc = os.path.join(audio_file_path, audio_file)
     if request.method == 'POST':
-        res, res1 = audio_pred(audio_loc)
-        vd_file = 'videos/' + video_file
-        print('routes',res1)
-        res_dict = {'Voice': 'Duration'}
-        res_dict.update(res)
-        print('b', res_dict)
-        return render_template('piechart.html', data=res_dict)
+        if 'results' in request.form:
+            retrieval_cur = mysql.connection.cursor()
+            resultvalue = retrieval_cur.execute("SELECT prediction_results FROM prediction_data WHERE video_id = %s ",
+                                                (file,))
+            if resultvalue > 0:
+                calculated_result = retrieval_cur.fetchone()
+                for dict1 in calculated_result:
+                    voice_dict = dict1
+                converteddict = ast.literal_eval(voice_dict)
+                return render_template('videoplayer.html', video_id=vd_file, data=converteddict)
+                retrieval_cur.close()
+            else:
+                res, res1 = audio_pred(audio_loc)
+                res_dict = {'Voice': 'Duration'}
+                res_dict.update(res)
+                insert_cur = mysql.connection.cursor()
+                insert_cur.execute("INSERT INTO prediction_data(video_id,prediction_results)VALUES(%s,%s)",
+                                   (file, res_dict))
+                mysql.connection.commit()
+                insert_cur.close()
+                return render_template('videoplayer.html', video_id=vd_file, data=res_dict)
+        elif 'email' in request.form:
+            email = request.form.get('email')
+            if email is not None:
+                print('a')
+                retrieval_cur_email = mysql.connection.cursor()
+                resultvalue = retrieval_cur_email.execute(
+                    "SELECT prediction_results FROM prediction_data WHERE video_id = %s ",
+                    (file,))
+                if resultvalue > 0:
+                    print('b')
+                    flash("The Results are already processed, click on view results")
+                else:
+                    flash("Email will be sent after Results are processed")
+                    process_results(audio_loc, email, file)
+                    return render_template('success.html')
+
     return render_template('success.html')
