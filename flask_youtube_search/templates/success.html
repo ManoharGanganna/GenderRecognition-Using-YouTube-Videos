@@ -4,6 +4,13 @@
 
 {% block section %}
     <main role="main">
+     {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages%}
+                <p>{{msg}}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
   <section class="jumbotron text-center">
     <div class="container">
@@ -14,6 +21,18 @@
           </p>
       </form>
     </div>
+	<div class="container">
+	  <h2 class="jumbotron-heading">OR</h2>
+      <form method="POST">
+        <div class="input-group mb-3">
+            <input type = "email" name = "email" placeholder="Enter Your e-mail to get notified after results are processed" value = "{{email if email}}" class="form-control"/>
+		</div>
+		<p>
+			<button type="submit" name="submit" value="search" class="btn btn-primary my-2">Submit Email</button>
+		</p>
+      </form>
+    </div>
+
   </section>
 
 </main>
