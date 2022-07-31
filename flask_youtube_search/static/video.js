@@ -1,77 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <!-- Custom styles for this template -->
-    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
-    <title>HTML Video Player</title>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-        google.charts.load("current", {packages: ["corechart"]});
-        google.charts.setOnLoadCallback(drawChart);
+const videoPlayer = document.querySelector('.video-player')
+const video = videoPlayer.querySelector('.video')
+const playButton = videoPlayer.querySelector('.play-button')
+const volume = videoPlayer.querySelector('.volume')
+const currentTimeElement = videoPlayer.querySelector('.current')
+const durationTimeElement = videoPlayer.querySelector('.duration')
+const progress = videoPlayer.querySelector('.video-progress')
+const progressBar = videoPlayer.querySelector('.video-progress-filled')
+let array_input = []
 
-        function drawChart() {
-            var data = google.visualization.arrayToDataTable([
-                {% for key, value in data.items() %}
-                    {% if value is string %}
-                        ['{{ key }}', '{{ value }}'],
-                    {% else %}
-                        ['{{ key }}', {{ value }}],
-                    {% endif %}
-                {% endfor %}
-            ]);
+//Play and Pause button
+playButton.addEventListener('click', (e) => {
+  if(video.paused){
+    video.play()
+    e.target.textContent = '❚ ❚'
+  } else {
+    video.pause()
+    e.target.textContent = '►'
+  }
+})
 
-            var options = {
-                backgroundColor: 'transparent',
-                'title': 'Gender Statistics',
-                is3D: true,
-                legend: {textStyle: {color: 'black'}},
-                titleTextStyle: {
-                    color: 'white'
-                }
-            };
+//volume
+volume.addEventListener('mousemove', (e)=> {
+  video.volume = e.target.value
+})
 
-            var chart = new google.visualization.PieChart(document.getElementById('piechart_3d'));
-            chart.draw(data, options);
-        }
-    </script>
-</head>
-<body>
+//current time and duration
+const currentTime = () => {
+  let currentMinutes = Math.floor(video.currentTime / 60)
+  let currentSeconds = Math.floor(video.currentTime - currentMinutes * 60)
+  let durationMinutes = Math.floor(video.duration / 60)
+  let durationSeconds = Math.floor(video.duration - durationMinutes * 60)
 
-<div class="video-player">
-    <video
-            src="{{ url_for('static', filename=video_id) }}"
-            poster="{{ thumbnail }}"
-            class="video">
-    </video>
-    <div class="player-controls">
+  currentTimeElement.innerHTML = `${currentMinutes}:${currentSeconds < 10 ? '0'+currentSeconds : currentSeconds}`
+  durationTimeElement.innerHTML = `${durationMinutes}:${durationSeconds}`
+}
 
-        <div class="video-progress">
-            <div class="video-progress-filled"></div>
-        </div>
+video.addEventListener('timeupdate', currentTime)
 
-        <button class="play-button" title="Play">►</button>
-        <input
-                type="range"
-                class="volume"
-                min="0"
-                max="1"
-                step="0.01"
-                value="1"
-        />
-        <div class="time">
-            <span class="current">0:00</span> / <span class="duration">0:00</span>
-        </div>
-    </div>
-</div>
-<div style="margin: 10px 0 0 10px;width: 500px">
-    <div id="piechart_3d" style="width:450px; height: 450px;"></div>
-</div>
-<script src="{{ url_for('static', filename='video.js') }}"></script>
-<script type="text/javascript">
-    myVar = myFunc({{js_ip|safe}})
-</script>
-</body>
-</html>
+function myFunc(vars) {
+    array_input = vars
+}
+
+//Progress bar
+video.addEventListener('timeupdate', () =>{
+
+  let tme = array_input
+  let current = 0
+  let flag = true
+  while(flag && array_input.length !== 0){
+    let element = tme[current]
+    if(video.currentTime > element[1] && video.currentTime <= element[2] ) {
+      if(element[0] === 'female'){
+        progressBar.style.background = 'red'
+      }
+      else if(element[0] === 'male'){
+        progressBar.style.background = 'blue'
+      }
+      else if(element[0] === 'music'){
+        progressBar.style.background = 'green'
+      }
+      else {
+        progressBar.style.background = 'yellow'
+      }
+      let percentage = (video.currentTime / video.duration) * 100
+      progressBar.style.width = `${percentage}%`
+    }
+    if((current +1) < tme.length ){
+        current += 1
+    }
+    else{
+      flag = false
+    }
+  }
+
+})
+
+//change progress bar on click
+progress.addEventListener('click', (e) =>{
+  const progressTime = (e.offsetX / progress.offsetWidth) * video.duration
+  video.currentTime = progressTime
+})
