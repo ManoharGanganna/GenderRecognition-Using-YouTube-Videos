@@ -1,21 +1,18 @@
+from threading import Thread
 from flask import Blueprint, render_template, current_app, request, url_for, redirect, flash
 import requests
 import re
 import os
 import ast
-# import redis
-# from rq import Queue
+from extensions import mysql
 from isodate import parse_duration
 from .videodownload import video_downloader
 from .audio_prediction import audio_pred
-from extensions import mysql
 from .sendemail import send_email
-
+import json
 
 main = Blueprint('main', __name__)
 
-# r = redis.Redis()
-# q = Queue(connection=r)
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
@@ -84,16 +81,17 @@ def index():
         return render_template('index.html')
 
 
-def process_results(audio_location, to_mail, file_name):
-    result, result1 = audio_pred(audio_location)
+def process_results(app, audio_location, to_mail, file_name):
+    result, result1, result2 = audio_pred(audio_location)
     res_dict = {'Voice': 'Duration'}
     res_dict.update(result)
-    insert_cur_email = mysql.connection.cursor()
-    insert_cur_email.execute("INSERT INTO prediction_data(video_id,prediction_results)VALUES(%s,%s)",
-                             (file_name, res_dict))
-    mysql.connection.commit()
-    insert_cur_email.close()
-    send_email(to_mail)
+    with app.app_context():
+        insert_cur = mysql.connection.cursor()
+        insert_cur.execute("INSERT INTO prediction_data(video_id,prediction_results)VALUES(%s,%s)",
+                           (file_name, res_dict))
+        mysql.connection.commit()
+        insert_cur.close()
+        send_email(to_mail)
 
 
 @main.route('/success', methods=['GET', 'POST'])
@@ -110,39 +108,39 @@ def success():
     if request.method == 'POST':
         if 'results' in request.form:
             retrieval_cur = mysql.connection.cursor()
-            resultvalue = retrieval_cur.execute("SELECT prediction_results FROM prediction_data WHERE video_id = %s ",
+            resultvalue = retrieval_cur.execute("SELECT prediction_results,js_results FROM prediction_data WHERE video_id = %s ",
                                                 (file,))
             if resultvalue > 0:
                 calculated_result = retrieval_cur.fetchone()
-                for dict1 in calculated_result:
-                    voice_dict = dict1
+                voice_dict = calculated_result[0]
                 converteddict = ast.literal_eval(voice_dict)
-                return render_template('videoplayer.html', video_id=vd_file, data=converteddict)
+                jr = calculated_result[1]
+                return render_template('videoplayer.html', video_id=vd_file, data=converteddict, js_ip=jr)
                 retrieval_cur.close()
             else:
-                res, res1 = audio_pred(audio_loc)
+                res, res1, res2 = audio_pred(audio_loc)
+                jsr = json.dumps(res2)
                 res_dict = {'Voice': 'Duration'}
                 res_dict.update(res)
                 insert_cur = mysql.connection.cursor()
-                insert_cur.execute("INSERT INTO prediction_data(video_id,prediction_results)VALUES(%s,%s)",
-                                   (file, res_dict))
+                insert_cur.execute("INSERT INTO prediction_data(video_id,prediction_results,js_results)VALUES(%s,%s,%s)",
+                                   (file, res_dict, jsr))
                 mysql.connection.commit()
                 insert_cur.close()
-                return render_template('videoplayer.html', video_id=vd_file, data=res_dict)
+                return render_template('videoplayer.html', video_id=vd_file, data=res_dict, js_ip=json.dumps(res2))
         elif 'email' in request.form:
             email = request.form.get('email')
             if email is not None:
-                print('a')
                 retrieval_cur_email = mysql.connection.cursor()
                 resultvalue = retrieval_cur_email.execute(
                     "SELECT prediction_results FROM prediction_data WHERE video_id = %s ",
                     (file,))
                 if resultvalue > 0:
-                    print('b')
                     flash("The Results are already processed, click on view results")
                 else:
                     flash("Email will be sent after Results are processed")
-                    process_results(audio_loc, email, file)
+                    app = current_app._get_current_object()
+                    Thread(target=process_results, args=(app, audio_loc, email, file,)).start()
                     return render_template('success.html')
 
     return render_template('success.html')
