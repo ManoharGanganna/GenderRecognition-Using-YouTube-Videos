@@ -22,7 +22,16 @@
                     {% endif %}
                 {% endfor %}
             ]);
-
+            var colors = [];
+            var colorMap = {'female': '#1D8348',
+                            'male': '#512E5F',
+                            'music':'#85C1E9',
+                            'no audio':'#CD6155',
+                            'noise':'#F4D03F'
+            }
+            for (var i = 0; i < data.getNumberOfRows(); i++) {
+                colors.push(colorMap[data.getValue(i, 0)]);
+            }
             var options = {
                 backgroundColor: 'transparent',
                 'title': 'Gender Statistics',
@@ -30,7 +39,8 @@
                 legend: {textStyle: {color: 'black'}},
                 titleTextStyle: {
                     color: 'white'
-                }
+                },
+                colors: colors
             };
 
             var chart = new google.visualization.PieChart(document.getElementById('piechart_3d'));
@@ -42,7 +52,7 @@
 
 <div class="video-player">
     <video
-            src="{{ url_for('static', filename=video_id) }}"
+            src="{{ video_id }}"
             poster="{{ thumbnail }}"
             class="video">
     </video>
