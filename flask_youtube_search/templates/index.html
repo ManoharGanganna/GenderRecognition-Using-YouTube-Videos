@@ -7,7 +7,7 @@
    <main role="main">
   <section class="jumbotron text-center">
     <div class="container">
-      <h1 class="jumbotron-heading">Search YouTube</h1>
+        <img src="{{ url_for('static', filename='youtube.jpg') }}" preserveAspectRatio="xMidYMid slice" focusable="false" role="img" aria-label="Placeholder: Thumbnail"></img>
       <p class="lead text-muted">Get the top nine results on YouTube for your query!</p>
       <form method="POST">
       <div class="input-group mb-3">
@@ -45,7 +45,7 @@
                 <div class="btn-group">
                     <p>
                       <form method="POST">
-                        <button type="submit" name="download" value="{{ video.url}}" class="btn btn-sm btn-outline-secondary">Download</button>
+                        <button type="submit" name="download" value="{{ video.url}}" class="btn btn-sm btn-outline-secondary" onclick="$('#loading').show();">Download</button>
                         <input type="hidden" name="thumbnail" value="{{ video.thumbnail }}"/>
                       </form>
                     </p>
