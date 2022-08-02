@@ -43,29 +43,32 @@ function myFunc(vars) {
 
 //Progress bar
 video.addEventListener('timeupdate', () =>{
-
   let tme = array_input
+  console.log(tme)
   let current = 0
   let flag = true
   while(flag && array_input.length !== 0){
     let element = tme[current]
     if(video.currentTime > element[1] && video.currentTime <= element[2] ) {
       if(element[0] === 'female'){
-        progressBar.style.background = 'red'
+        progressBar.style.background = '#1D8348'
       }
       else if(element[0] === 'male'){
-        progressBar.style.background = 'blue'
+        progressBar.style.background = '#512E5F'
       }
       else if(element[0] === 'music'){
-        progressBar.style.background = 'green'
+        progressBar.style.background = '#85C1E9'
+      }
+      else if(element[0] === 'noEnergy'){
+        progressBar.style.background = '#CD6155'
       }
       else {
-        progressBar.style.background = 'yellow'
+        progressBar.style.background = '#F4D03F'
       }
       let percentage = (video.currentTime / video.duration) * 100
       progressBar.style.width = `${percentage}%`
     }
-    if((current +1) < tme.length ){
+    if((current + 1) < tme.length ){
         current += 1
     }
     else{
